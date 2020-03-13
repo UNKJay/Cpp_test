@@ -4,21 +4,23 @@
 
 using namespace std;
 
-double SavingAccount::total=0;
+double Account::total=0;
 
-SavingAccount::SavingAccount(const Date &date,const string &id,double rate):
-    id(id),balance(0),rate(rate),lastDate(date),accumulation(0){
+Account::Account(const Date &date,const string &id):
+    id(id),balance(0){
     date.show();
     cout<<"\t#"<<id<<"  is created"<<endl;
 }
 
-void SavingAccount::error(const std::string &msg){
+void Account::show() const{
+    cout<<"#"<<id<<"\tBalance "<<balance;
+}
+
+void Account::error(const std::string &msg){
     cout<<"Error (#"<<id<<")"<<msg<<endl;
 }
 
-void SavingAccount::record(const Date &date, double amount, const std::string &desc){
-    accumulation=accumulate(date);
-    lastDate=date;
+void Account::record(const Date &date, double amount, const std::string &desc){
     amount=floor(amount*100+0.5)/100;       //保留小数点后两位
     balance+=amount;
     total+=amount;
@@ -26,24 +28,59 @@ void SavingAccount::record(const Date &date, double amount, const std::string &d
     cout<<"\t#"<<id<<"\t"<<amount<<"\t"<<balance<<"\t"<<desc<<endl;
 }
     
+SavingAccount::SavingAccount(const Date &date, const string &id, double rate):
+    Account(date,id),rate(rate),acc(date,0) {}
+
 void SavingAccount::deposit(const Date &date, double amount, const std::string &desc){
     record (date,amount,desc);
+    acc.change(date,getBalance());
 }
 
 void SavingAccount::withdraw(const Date &date, double amount, const std::string &desc){
     if (amount>getBalance())
         error("not enough money!");
-    else
+    else{
         record(date,-amount,desc);
+        acc.change(date,getBalance());
+    }
+        
 }
 
 void SavingAccount:: settle(const Date &date){
-    double interest=accumulate(date)*rate/365;
+    double interest = acc.getSum(date)*rate/date.distance(Date(date.getYear()-1,1,1));
     if (interest!=0)
         record(date,interest,"interest");
-    accumulation=0;
+    acc.reset(date,getBalance());
 }
 
-void SavingAccount::show(){
-    cout<<"#"<<id<<"\tBalance "<<balance;
+CreditAccount::CreditAccount(const Date &date , const std::string &id , double credit , double rate , double fee):
+    Account(date,id),fee(fee),credit(credit),rate(rate),acc(date,0) {}
+
+void CreditAccount::deposit(const Date &date, double amount, const std::string &desc){
+    record (date,amount,desc);
+    acc.change(date,getDebt());
+}
+
+void CreditAccount::withdraw(const Date &date, double amount, const std::string &desc){
+    if (amount>credit+getBalance())
+        error("not enough credit!");
+    else{
+        record(date,-amount,desc);
+        acc.change(date,getDebt());
+    }
+}
+
+void CreditAccount:: settle(const Date &date){
+    double interest = acc.getSum(date)*rate;
+    if (interest!=0)
+        record(date,interest,"interest");
+    if (date.getMonth()==1){
+        record(date,-fee,"annual fee");
+    }
+    acc.reset(date,getDebt());
+}
+
+void CreditAccount::show() const {
+    Account::show();
+    cout<<"\tAvailable credit:"<<getAvailableCredit();
 }

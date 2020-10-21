@@ -3,6 +3,7 @@
 using namespace std;
 
 bool isUgly(int n){
+    if (n == 1) return false;
     while (n%2==0)
         n/=2;
     while (n%3==0)
@@ -14,12 +15,6 @@ bool isUgly(int n){
 
 int main(){
     int n;
-    while (cin>>n)
-    {
-        if (isUgly(n))
-            cout<<"True"<<endl;
-        else
-            cout<<"False"<<endl;
-    }
+    while (cin>>n)  cout<<(isUgly(n)?"True":"False")<<endl;
     return 0;
 }
